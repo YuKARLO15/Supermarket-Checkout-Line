@@ -98,8 +98,11 @@ class SupermarketCheckout:
         cashier_utilization = self.cashier_busy_time / max(self.env.now, 1)  # Prevent division by zero
         
         # Calculate time-weighted average queue length
-        time_intervals = np.diff(list(self.queue_length_times) + [self.simulation_duration])
-        avg_queue_length = np.average(list(self.queue_lengths)[:-1], weights=time_intervals) if self.queue_lengths else 0
+        if self.queue_lengths:
+            time_intervals = np.diff(list(self.queue_length_times) + [self.simulation_duration])
+            avg_queue_length = np.average(self.queue_lengths, weights=time_intervals)
+        else:
+            avg_queue_length = 0
         
         return {
             'avg_waiting_time': avg_waiting_time,
