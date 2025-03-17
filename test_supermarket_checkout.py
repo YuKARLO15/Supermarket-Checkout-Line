@@ -10,7 +10,7 @@ class TestSupermarketCheckout(unittest.TestCase):
 
     def test_run_simulation(self):
         """Test if the simulation returns all expected statistical keys with valid values."""
-        result = run_simulation(1.0, 1.0, 60)  # 1 customer/min arrival, 1 customer/min service, 1 hour
+        result = run_simulation(1.0, 1.0, 480)  # 1 customer/min arrival, 1 customer/min service, 1 hour
         expected_keys = ['avg_waiting_time', 'cashier_utilization', 'max_queue_length', 'avg_queue_length', 'total_customers']
         
         # Check all expected keys exist
@@ -27,7 +27,7 @@ class TestSupermarketCheckout(unittest.TestCase):
 
     def test_no_customers(self):
         """Test behavior when no customers arrive (arrival rate = 0)."""
-        result = run_simulation(0, 1.0, 60)  # No arrivals
+        result = run_simulation(0, 1.0, 480)  # No arrivals
         
         # Expecting zero values across all statistics
         self.assertEqual(result['total_customers'], 0)
@@ -38,7 +38,7 @@ class TestSupermarketCheckout(unittest.TestCase):
 
     def test_high_arrival_rate(self):
         """Test scenario where arrival rate is much higher than service rate."""
-        result = run_simulation(5.0, 1.0, 60)  # More customers than the cashier can handle
+        result = run_simulation(5.0, 1.0, 480)  # More customers than the cashier can handle
 
         # Expect longer wait times and longer queues
         self.assertGreater(result['avg_waiting_time'], 0)
@@ -46,13 +46,16 @@ class TestSupermarketCheckout(unittest.TestCase):
 
     def test_zero_service_rate(self):
         """Test behavior when service rate is extremely low (almost zero, cashier barely serves customers)."""
-        result = run_simulation(1.0, 1e-3, 60)  # Customers arrive, but cashier is extremely slow
+        result = run_simulation(1.0, 1e-3, 480)  # Customers arrive, but cashier is extremely slow
         
-        # Instead of checking avg_waiting_time > 0, check if the queue builds up
+        # Queue should build up significantly since service is very slow
         self.assertGreater(result['max_queue_length'], 10, "Queue should be long due to slow service")
         
-        # Ensure cashier utilization is very low, but not necessarily zero
-        self.assertLess(result['cashier_utilization'], 0.1, "Cashier should be nearly idle")
+        # Cashier should be busy almost 100% of the time (serving very slowly)
+        self.assertGreater(result['cashier_utilization'], 0.9, "Cashier should be fully utilized serving slowly")
+        
+        # Few customers should be processed
+        self.assertLess(result['total_customers'], 5, "Few customers should be processed due to slow service")
 
 if __name__ == '__main__':
     unittest.main(exit=False)  # Prevents the script from stopping

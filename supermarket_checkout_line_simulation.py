@@ -79,7 +79,11 @@ class SupermarketCheckout:
             wait_time = self.env.now - arrival_time  # Compute wait time
             self.waiting_times.append(wait_time)
             service_time = random.expovariate(self.service_rate)  # Randomized service time
-            self.cashier_busy_time += service_time
+            
+            # Only count service time that fits within the simulation duration
+            actual_service_time = min(service_time, self.simulation_duration - self.env.now)
+            self.cashier_busy_time += actual_service_time
+            
             yield self.env.timeout(service_time)  # Simulate service
     
     def monitor_queue(self):
@@ -94,7 +98,7 @@ class SupermarketCheckout:
         """Returns key performance metrics of the checkout simulation."""
         return {
             'avg_waiting_time': statistics.mean(self.waiting_times) if self.waiting_times else 0,
-            'cashier_utilization': self.cashier_busy_time / max(self.env.now, 1),
+            'cashier_utilization': min(1.0, self.cashier_busy_time / max(self.env.now, 1)), 
             'max_queue_length': self.max_queue_length,
             'avg_queue_length': statistics.mean(self.queue_lengths) if self.queue_lengths else 0,
             'total_customers': len(self.waiting_times)
